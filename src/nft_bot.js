@@ -30,6 +30,8 @@ const salesroleIdsPath = 'src/data/roles/salesroleIds.txt';
 const listingsroleIdsPath = 'src/data/roles/listingsroleIds.txt';
 const transfersroleIdsPath = 'src/data/roles/transfersroleIds.txt';
 const offersroleIdsPath = 'src/data/roles/offersroleIds.txt';
+// Load list of channels in which the discord commands are allowed in
+const allowedChannels = 'src/data/channels/allowedChannelIds.txt'
 
 // PERIODIC CHECKS START
 consoleLog('Before setInterval. Config:', config);
@@ -64,6 +66,7 @@ const fetchListingData = async () => {
 const fetchOfferData = async () => {
     return await fetchDataByApiUrl(config.offersApiUrl);
 };
+
 // Function to fetch listed Nyano cats data by username
 const fetchUserListedData = async (username, sorting) => {
     const userUrl = `https://art.nanswap.com/public/collected?username=${username}&status=listed&sort=${sorting}`;
@@ -116,6 +119,9 @@ client.on("ready", async () => {
     // await postNewEvents(); -- uncomment for testing
     consoleLog(`Logged in as ${client.user.tag}`);
 
+    let aChannels = getChannelToUpdate(allowedChannels);
+    consoleLog(aChannels);
+
     client.user.setPresence({
         activities: [{ name: 'Nanswap Art', type: ActivityType.Watching }],
         status: 'dnd'
@@ -138,6 +144,8 @@ client.on("ready", async () => {
         try {
             // Check if the message starts with the bot's prefix and is not sent by another bot
             if (!message.content.startsWith(config.prefix) || message.author.bot) return;
+
+            if (!aChannels.includes(message.channelId)) return;
 
             const args = message.content.slice(config.prefix.length).trim().split(/ +/);
             const commandName = args.shift().toLowerCase();
@@ -293,7 +301,7 @@ async function postNewTransfers() {
                     )   
                     .setURL(link)
                     .setThumbnail('attachment://' + imageName)
-                    .setFooter({ text: 'Nyano Bot | Powered by Armour Hosting', iconURL: 'https://media.discordapp.net/attachments/1083342379513290843/1126321603224014908/discordsmall.png?ex=659f423c&is=658ccd3c&hm=1c648f3554786855f83494c2f162f3acc4003ce6083995b301c83d1e2402c10a&=&format=webp&quality=lossless&width=676&height=676', url: 'https://discord.js.org' })
+                    .setFooter({ text: 'Nyano Cats Bot', iconURL: config.embedFooterImage, url: 'https://discord.js.org' })
                     .setTimestamp();
 
                 for (let i = 0; i < channelsToUpdates.length; i++) {
@@ -303,6 +311,7 @@ async function postNewTransfers() {
 
                     consoleLog('Channel to update:', channelsToUpdates[i]);
                     consoleLog('Fetching channel ID from file:', transferchannelIdPath);
+                    console.log("Transfer SENTTTT");
                     let channel = await client.channels.cache.get(channelIdToUpdate)
                     let mention = transferRoleId !== null ? `<@&${transferRoleId}>` : ''
 
@@ -354,7 +363,7 @@ async function postNewSales() {
                     )                  
                     .setURL(link)
                     .setThumbnail('attachment://' + imageName)
-                    .setFooter({ text: 'Nyano Bot | Powered by Armour Hosting', iconURL: 'https://media.discordapp.net/attachments/1083342379513290843/1126321603224014908/discordsmall.png?ex=659f423c&is=658ccd3c&hm=1c648f3554786855f83494c2f162f3acc4003ce6083995b301c83d1e2402c10a&=&format=webp&quality=lossless&width=676&height=676', url: 'https://discord.js.org' })
+                    .setFooter({ text: 'Nyano Cats Bot', iconURL: config.embedFooterImage, url: 'https://discord.js.org' })
                     .setTimestamp();
 
                 for (let i = 0; i < channelsToUpdates.length; i++) {
@@ -368,6 +377,8 @@ async function postNewSales() {
                     let mention = salesRoleId !== null ? `<@&${salesRoleId}>` : ''
                     
                     await channel.send({ content: `${saleElement.fromUserId.username} has sold an asset to ${toUsername} for Ӿ${+saleElement.price}. ||${mention}||`, embeds: [Embed], files: [{ attachment: imageName }] });
+
+                    console.log("SALE SENTTTT");
 
                     lastProcessedSales.push(saleElement._id)
                 }
@@ -411,7 +422,7 @@ async function postNewListings() {
                     .setDescription(`**${emoji.Listing} [${listingElement.assetId.name}](${link}) was recently listed!\n\n${emoji.Seller} __Seller:__ [${listingElement.fromUserId.username}](${fromuserLink})\n${emoji.Currency} __Price:__ \`Ӿ${+listingElement.price}\`\n${emoji.Status} __Status:__  \`${listingElement.state}\`\n${emoji.Lock} __Secure URL:__ [View Asset](${link})**`)
                     .setURL(link)
                     .setThumbnail(`attachment://` + imageName)
-                    .setFooter({ text: 'Nyano Bot | Powered by Armour Hosting', iconURL: 'https://media.discordapp.net/attachments/1083342379513290843/1126321603224014908/discordsmall.png?ex=659f423c&is=658ccd3c&hm=1c648f3554786855f83494c2f162f3acc4003ce6083995b301c83d1e2402c10a&=&format=webp&quality=lossless&width=676&height=676', url: 'https://discord.js.org' })
+                    .setFooter({ text: 'Nyano Cats Bot', iconURL: config.embedFooterImage, url: 'https://discord.js.org' })
                     .setTimestamp();
 
                 for (let i = 0; i < channelsToUpdates.length; i++) {
@@ -422,6 +433,7 @@ async function postNewListings() {
                     consoleLog('Fetching channel ID from file:', listingchannelIdPath);
                     let channel = await client.channels.cache.get(channelIdToUpdate);
                     let mention = listingroleId !== null ? `<@&${listingroleId}>` : '';
+                    console.log("LISTING SENTTTT");
                     await channel.send({ content: `${listingElement.fromUserId.username} has just listed a new asset for Ӿ${+listingElement.price}. ||${mention}||`, embeds: [Embed], files: [{ attachment: imageName }] });
                     lastProcessedListings.push(listingElement._id);
                 }
@@ -466,7 +478,7 @@ async function postNewOffers() {
                     )   
                     .setURL(link)
                     .setThumbnail(`attachment://` + imageName)
-                    .setFooter({ text: 'Nyano Bot | Powered by Armour Hosting', iconURL: 'https://media.discordapp.net/attachments/1083342379513290843/1126321603224014908/discordsmall.png?ex=659f423c&is=658ccd3c&hm=1c648f3554786855f83494c2f162f3acc4003ce6083995b301c83d1e2402c10a&=&format=webp&quality=lossless&width=676&height=676', url: 'https://discord.js.org' })
+                    .setFooter({ text: 'Nyano Cats Bot', iconURL: config.embedFooterImage, url: 'https://discord.js.org' })
                     .setTimestamp();
 
                 for (let i = 0; i < channelsToUpdates.length; i++) {
@@ -478,6 +490,7 @@ async function postNewOffers() {
                     consoleLog('Fetching channel ID from file:', offerchannelIdPath);
                     let channel = await client.channels.cache.get(channelIdToUpdate);
                     let mention = offerroleId !== null ? `<@&${offerroleId}>` : '';
+                    console.log("OFFER SENTTTT");
 
                     await channel.send({ content: `${fromUsername} has offered Ӿ${+offerElement.price} for ${offerElement.assetId.name}. ||${mention}||\n`, embeds: [Embed], files: [{ attachment: imageName }] });
 
